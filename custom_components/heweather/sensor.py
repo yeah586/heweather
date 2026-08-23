@@ -193,7 +193,8 @@ class HeweatherWeatherSensor(Entity):
         
         # 【修改重点】直接使用 OPTIONS 里的中文名称作为实体名
         # OPTIONS[option][1] 对应代码最上面的字典里的 "舒适度指数"、"洗车指数" 等中文
-        self._attr_name = OPTIONS[option][0] 
+        # self._attr_name = OPTIONS[option][0] 
+        # 去掉对_attr_name的初始化，走翻译中的配置
         
         self._icon = OPTIONS[option][2]
         self._unit_of_measurement = OPTIONS[option][3]

@@ -11,6 +11,7 @@ CONF_KEY = "key"
 CONF_STORAGE_PATH = "storage_path"
 CONF_JWT_SUB = "auth_jwt_sub"
 CONF_JWT_KID = "auth_jwt_kid"
+CONF_JWT_ISS = "auth_jwt_iss"
 
 DEFAULT_HOST = "devapi.qweather.com"
 

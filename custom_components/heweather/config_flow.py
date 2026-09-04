@@ -20,6 +20,7 @@ from .heweather.const import (
     CONF_STORAGE_PATH,
     CONF_JWT_SUB,
     CONF_JWT_KID,
+    CONF_JWT_ISS,
     CONF_DISASTERLEVEL,
     CONF_DISASTERMSG,
     CONF_SENSOR_LIST,
@@ -170,6 +171,7 @@ class HeWeatherConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     _jwt_pubkey: str
     _jwt_sub: str
     _jwt_kid: str
+    _jwt_iss: str
     _longitude: str
     _latitude: str
 
@@ -185,6 +187,7 @@ class HeWeatherConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._jwt_pubkey = ''
         self._jwt_sub = ''
         self._jwt_kid = ''
+        self._jwt_iss = ''
 
         self._longitude = ''
         self._latitude = ''
@@ -276,11 +279,14 @@ class HeWeatherConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.__show_auth_apikey_config_form("jwt_sub is empty")
             elif user_input.get("jwt_kid", None) == "":
                 return await self.__show_auth_apikey_config_form("jwt_kid is empty")
+            elif user_input.get("jwt_iss", None) == "":
+                return await self.__show_auth_apikey_config_form("jwt_iss is empty")
             elif user_input.get("host", None) == "":
                 return await self.__show_auth_apikey_config_form("host is empty")
             else:
                 self._jwt_sub = user_input.get("jwt_sub", self._jwt_sub)
                 self._jwt_kid = user_input.get("jwt_kid", self._jwt_kid)
+                self._jwt_iss = user_input.get("jwt_iss", self._jwt_iss)
                 self._host = user_input.get("host", self._host)
                 return await self.async_step_location_config()
         await self._heweather_cert.gen_key_async()
@@ -298,6 +304,10 @@ class HeWeatherConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(
                     "jwt_kid",
                     default=self._jwt_kid
+                ): str,
+                vol.Required(
+                    "jwt_iss",
+                    default=self._jwt_iss
                 ): str,
                 vol.Required(
                     "host",
@@ -384,6 +394,7 @@ class HeWeatherConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_STORAGE_PATH: self._storage_path,
                 CONF_JWT_SUB: self._jwt_sub,
                 CONF_JWT_KID: self._jwt_kid,
+                CONF_JWT_ISS: self._jwt_iss,
                 CONF_HOST: self._host,
                 CONF_LONGITUDE: self._longitude,
                 CONF_LATITUDE: self._latitude,
@@ -407,6 +418,7 @@ class HeWeatherOptionsFlow(config_entries.OptionsFlow):
         self._host = config_entry.data.get(CONF_HOST, DEFAULT_HOST)
         self._jwt_sub = config_entry.data.get(CONF_JWT_SUB, "")
         self._jwt_kid = config_entry.data.get(CONF_JWT_KID, "")
+        self._jwt_iss = config_entry.data.get(CONF_JWT_ISS, "")
         
         # Initialize location and disaster config
         self._longitude = config_entry.data.get(CONF_LONGITUDE, "")
@@ -498,6 +510,13 @@ class HeWeatherOptionsFlow(config_entries.OptionsFlow):
                     description_placeholders={"jwt_pubkey": self._jwt_pubkey},
                     errors={"base": "jwt_kid is empty"}
                 )
+            if not user_input.get("jwt_iss", "").strip():
+                return self.async_show_form(
+                    step_id="auth_jwt_config",
+                    data_schema=self._get_jwt_schema(),
+                    description_placeholders={"jwt_pubkey": self._jwt_pubkey},
+                    errors={"base": "jwt_iss is empty"}
+                )
             if not user_input.get("host", "").strip():
                 return self.async_show_form(
                     step_id="auth_jwt_config",
@@ -509,6 +528,7 @@ class HeWeatherOptionsFlow(config_entries.OptionsFlow):
             # Store auth data and proceed to location config
             self._jwt_sub = user_input.get("jwt_sub", "")
             self._jwt_kid = user_input.get("jwt_kid", "")
+            self._jwt_iss = user_input.get("jwt_iss", "")
             self._host = user_input.get("host", DEFAULT_HOST)
             return await self.async_step_location_config()
 
@@ -543,6 +563,7 @@ class HeWeatherOptionsFlow(config_entries.OptionsFlow):
         """Get JWT configuration schema."""
         current_jwt_sub = self._config_entry.data.get(CONF_JWT_SUB, "")
         current_jwt_kid = self._config_entry.data.get(CONF_JWT_KID, "")
+        current_jwt_iss = self._config_entry.data.get(CONF_JWT_ISS, "")
         current_host = self._config_entry.data.get(CONF_HOST, DEFAULT_HOST)
         
         return vol.Schema({
@@ -553,6 +574,10 @@ class HeWeatherOptionsFlow(config_entries.OptionsFlow):
             vol.Required(
                 "jwt_kid",
                 default=current_jwt_kid
+            ): str,
+            vol.Required(
+                "jwt_iss",
+                default=current_jwt_iss
             ): str,
             vol.Required(
                 "host",
@@ -671,6 +696,7 @@ class HeWeatherOptionsFlow(config_entries.OptionsFlow):
                 CONF_HOST: self._host,
                 CONF_JWT_SUB: self._config_entry.data.get(CONF_JWT_SUB, ""),
                 CONF_JWT_KID: self._config_entry.data.get(CONF_JWT_KID, ""),
+                CONF_JWT_ISS: self._config_entry.data.get(CONF_JWT_ISS, ""),
             })
         else:
             # Update JWT settings, preserve existing API key settings
@@ -679,6 +705,7 @@ class HeWeatherOptionsFlow(config_entries.OptionsFlow):
                 CONF_HOST: self._host,
                 CONF_JWT_SUB: self._jwt_sub,
                 CONF_JWT_KID: self._jwt_kid,
+                CONF_JWT_ISS: self._jwt_iss,
             })
 
         # Migrate entities if location changed (更平滑的实体迁移)

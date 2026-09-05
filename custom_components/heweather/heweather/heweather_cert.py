@@ -261,24 +261,28 @@ class HeWeatherCert:
             return None
 
     def get_jwt_token_heweather(
-        self, sub: str, kid: str, iat: int, exp: int
+        self, sub: str, kid: str, iat: int, exp: int, iss: str | None = None
     ) -> str | None:
         payload = {
             "iat": iat,
             "exp": exp,
             "sub": sub,
         }
+        if iss:
+            payload["iss"] = iss
         headers = {"kid": kid}
         return self.get_jwt_token(payload, headers)
 
     async def get_jwt_token_heweather_async(
-        self, sub: str, kid: str, iat: int, exp: int
+        self, sub: str, kid: str, iat: int, exp: int, iss: str | None = None
     ) -> str | None:
         payload = {
             "iat": iat,
             "exp": exp,
             "sub": sub,
         }
+        if iss:
+            payload["iss"] = iss
         headers = {"kid": kid}
         return await self.get_jwt_token_async(payload, headers)
 

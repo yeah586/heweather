@@ -134,7 +134,8 @@
             "key is empty": "key is empty",
             "host is empty": "host is empty",
             "jwt_sub is empty": "jwt_sub is empty",
-            "jwt_kid is empty": "jwt_kid is empty"
+            "jwt_kid is empty": "jwt_kid is empty",
+            "jwt_iss is empty": "jwt_iss is empty"
         },
         "flow_title": "heweather",
         "step": {
@@ -155,10 +156,11 @@
             },
             "auth_jwt_config": {
                 "title": "JWT config",
-                "description": "Please upload the public key\n```\n{jwt_pubkey}\n```\n to the QWeather developer console, then enter the corresponding Project ID, Credential ID, and API Host.",
+                "description": "Please upload the public key\n```\n{jwt_pubkey}\n```\n to the QWeather developer console, then enter the corresponding Project ID, Credential ID, Developer ID, and API Host.",
                 "data": {
                     "jwt_sub": "Project ID",
                     "jwt_kid": "Credential ID",
+                    "jwt_iss": "Developer ID",
                     "host": "API Host"
                 }
             },
@@ -188,7 +190,8 @@
             "key is empty": "key is empty",
             "host is empty": "host is empty",
             "jwt_sub is empty": "jwt_sub is empty",
-            "jwt_kid is empty": "jwt_kid is empty"
+            "jwt_kid is empty": "jwt_kid is empty",
+            "jwt_iss is empty": "jwt_iss is empty"
         },
         "step": {
             "auth_method_config": {
@@ -208,10 +211,11 @@
             },
             "auth_jwt_config": {
                 "title": "Update JWT config",
-                "description": "Please upload the public key\n```\n{jwt_pubkey}\n```\n to the QWeather developer console, then enter the corresponding Project ID, Credential ID, and API Host.",
+                "description": "Please upload the public key\n```\n{jwt_pubkey}\n```\n to the QWeather developer console, then enter the corresponding Project ID, Credential ID, Developer ID, and API Host.",
                 "data": {
                     "jwt_sub": "Project ID",
                     "jwt_kid": "Credential ID",
+                    "jwt_iss": "Developer ID",
                     "host": "API Host"
                 }
             },

@@ -46,6 +46,7 @@ from .heweather.const import (
     CONF_KEY,
     CONF_JWT_SUB,
     CONF_JWT_KID,
+    CONF_JWT_ISS,
     DEFAULT_HOST,
     CONF_DISASTERLEVEL,
     CONF_DISASTERMSG,
@@ -139,8 +140,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         heweather_cert = hass.data[DOMAIN].get('heweather_cert', None)
         jwt_sub = config_entry.data.get(CONF_JWT_SUB)
         jwt_kid = config_entry.data.get(CONF_JWT_KID)
-        suggestion_data = SuggestionData(hass, longitude, latitude, host, heweather_cert=heweather_cert, jwt_sub=jwt_sub, jwt_kid=jwt_kid)
-        weather_data = WeatherData(hass, longitude, latitude, host, disastermsg, disasterlevel, heweather_cert=heweather_cert, jwt_sub=jwt_sub, jwt_kid=jwt_kid)
+        jwt_iss = config_entry.data.get(CONF_JWT_ISS)
+        suggestion_data = SuggestionData(hass, longitude, latitude, host, heweather_cert=heweather_cert, jwt_sub=jwt_sub, jwt_kid=jwt_kid, jwt_iss=jwt_iss)
+        weather_data = WeatherData(hass, longitude, latitude, host, disastermsg, disasterlevel, heweather_cert=heweather_cert, jwt_sub=jwt_sub, jwt_kid=jwt_kid, jwt_iss=jwt_iss)
 
     await weather_data.async_update(dt_util.now())
     config_entry.async_on_unload(async_track_time_interval(hass, weather_data.async_update, WEATHER_TIME_BETWEEN_UPDATES, cancel_on_shutdown=True))
@@ -374,7 +376,7 @@ class HeweatherWeatherSensor(Entity):
 class WeatherData(object):
     """天气相关的数据，存储在这个类中."""
 
-    def __init__(self, hass, longitude, latitude, host, disastermsg, disasterlevel, key=None, heweather_cert=None, jwt_sub=None, jwt_kid=None):
+    def __init__(self, hass, longitude, latitude, host, disastermsg, disasterlevel, key=None, heweather_cert=None, jwt_sub=None, jwt_kid=None, jwt_iss=None):
         """初始化函数."""
         self._hass = hass
         location = f"{longitude},{latitude}"
@@ -401,6 +403,7 @@ class WeatherData(object):
             self._heweather_cert = heweather_cert
             self._jwt_sub = jwt_sub
             self._jwt_kid = jwt_kid
+            self._jwt_iss = jwt_iss
 
         self._feelsLike = None
         self._text = None
@@ -616,11 +619,17 @@ class WeatherData(object):
             connector = aiohttp.TCPConnector(limit=10)
             headers = None
             if self._is_jwt:
-                jwt_token = await self._heweather_cert.get_jwt_token_heweather_async(self._jwt_sub, self._jwt_kid, int(time.time()) - 30, int(time.time()) + 180)
+                jwt_token = await self._heweather_cert.get_jwt_token_heweather_async(self._jwt_sub, self._jwt_kid, int(time.time()) - 30, int(time.time()) + 180, self._jwt_iss)
                 headers = {'Authorization': f'Bearer {jwt_token}'}
             async with aiohttp.ClientSession(connector=connector, timeout=timeout, headers=headers) as session:
                 async with session.get(self._weather_now_url) as response:
                     json_data = await response.json()
+                    if "now" not in json_data:
+                        _LOGGER.error(
+                            "Unexpected response from %s (HTTP %s): %s",
+                            self._weather_now_url, response.status, json_data
+                        )
+                        return
                     weather = json_data["now"]
                 async with session.get(self._air_now_url) as response:
                     json_data = await response.json()
@@ -699,7 +708,7 @@ class WeatherData(object):
 class SuggestionData(object):
     """天气相关建议的数据，存储在这个类中."""
 
-    def __init__(self, hass, longitude, latitude, host, key=None, heweather_cert=None, jwt_sub=None, jwt_kid=None):
+    def __init__(self, hass, longitude, latitude, host, key=None, heweather_cert=None, jwt_sub=None, jwt_kid=None, jwt_iss=None):
         """初始化函数."""
         self._hass = hass
         location = f"{longitude},{latitude}"
@@ -720,6 +729,7 @@ class SuggestionData(object):
             self._heweather_cert = heweather_cert
             self._jwt_sub = jwt_sub
             self._jwt_kid = jwt_kid
+            self._jwt_iss = jwt_iss
 
         self._updatetime = ["1","1"]
         self._air = ["1","1"]
@@ -820,7 +830,7 @@ class SuggestionData(object):
             session = async_get_clientsession(self._hass)
             headers = None
             if self._is_jwt:
-                jwt_token = await self._heweather_cert.get_jwt_token_heweather_async(self._jwt_sub, self._jwt_kid, int(time.time()) - 30, int(time.time()) + 180)
+                jwt_token = await self._heweather_cert.get_jwt_token_heweather_async(self._jwt_sub, self._jwt_kid, int(time.time()) - 30, int(time.time()) + 180, self._jwt_iss)
                 headers = {'Authorization': f'Bearer {jwt_token}'}
             with async_timeout.timeout(15):
             #with async_timeout.timeout(15, loop=self._hass.loop):
